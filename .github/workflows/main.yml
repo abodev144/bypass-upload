@@ -7,6 +7,12 @@ on:
         description: 'رابط الملف الذي تريد رفعه'
         required: true
         default: ''  # يمكنك تعيين قيمة افتراضية هنا إذا رغبت
+      username:
+        description: 'اسم المستخدم لـ Git'
+        required: true
+      email:
+        description: 'البريد الإلكتروني لـ Git'
+        required: true
 
 jobs:
   upload:
@@ -17,8 +23,8 @@ jobs:
 
       - name: Set up Git
         run: |
-          git config --global user.name "${{ env.UN }}"
-          git config --global user.email "${{ env.UEM }}"
+          git config --global user.name "${{ github.event.inputs.username }}"
+          git config --global user.email "${{ github.event.inputs.email }}"
           unset GITHUB_TOKEN
           gh auth login --with-token <<< "${{ secrets.GTOKEN }}"
 
