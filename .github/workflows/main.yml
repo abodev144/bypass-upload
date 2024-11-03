@@ -6,7 +6,9 @@ on:
       file_url:
         description: 'رابط الملف الذي تريد رفعه'
         required: true
-        default: ''  # يمكنك تعيين قيمة افتراضية هنا إذا رغبت
+      custom_name:
+        description: 'الاسم المخصص للملف بعد الرفع'
+        required: true
       username:
         description: 'اسم المستخدم لـ Git'
         required: true
@@ -30,14 +32,14 @@ jobs:
 
       - name: Download large file
         run: |
-          FILE_URL="${{ github.event.inputs.file_url }}"  # استخدام رابط الملف المدخل
-          curl -L -o large_file "$FILE_URL"  # تنزيل الملف باستخدام curl
+          FILE_URL="${{ github.event.inputs.file_url }}"
+          curl -L -o large_file "$FILE_URL"
           echo "File downloaded from $FILE_URL."
 
       - name: Split file into parts
         run: |
-          PART_SIZE=25M  # حجم الأجزاء
-          split -b $PART_SIZE "large_file" "large_file_part_"
+          PART_SIZE=25M
+          split -b $PART_SIZE "large_file" "${{ github.event.inputs.custom_name }}_part_"
           echo "File split into parts."
 
       - name: Create GitHub repository
@@ -47,8 +49,20 @@ jobs:
 
       - name: Upload parts to GitHub
         run: |
-          git init
-          git remote add origin "https://github.com/your-username/$REPO_NAME.git"  # ضع اسم المستخدم هنا
-          git add "large_file_part_*"
+          if [ -d ".git" ]; then
+            echo "مستودع Git موجود بالفعل."
+          else
+            git init
+          fi
+          
+          if git remote get-url origin; then
+            echo "تحديث URL لـ remote origin."
+            git remote set-url origin "https://github.com/your-username/$REPO_NAME.git"
+          else
+            echo "إضافة remote origin."
+            git remote add origin "https://github.com/your-username/$REPO_NAME.git"
+          fi
+          
+          git add "${{ github.event.inputs.custom_name }}_part_*"  # إضافة الأجزاء مع الاسم المخصص
           git commit -m "Upload split parts"
           git push -u origin master
