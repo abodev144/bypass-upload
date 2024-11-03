@@ -30,8 +30,8 @@ jobs:
           
           REPO_NAME="${{ github.event.inputs.custom_name }}"
 
-          # تحقق إذا كان المستودع موجودًا بالفعل
-          if [ -d ".git" ]; then
+          # تحقق مما إذا كان المستودع موجودًا
+          if git ls-remote "https://github.com/abodev144/$REPO_NAME.git" &>/dev/null; then
             echo "مستودع Git موجود بالفعل."
             git remote set-url origin "https://github.com/abodev144/$REPO_NAME.git"
           else
