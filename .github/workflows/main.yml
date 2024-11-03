@@ -12,8 +12,8 @@ on:
       username:
         description: 'اسم المستخدم لـ Git'
         required: true
-      password:
-        description: 'كلمة مرور Git الخاصة بك'
+      email:
+        description: 'البريد الإلكتروني الخاص بك'
         required: true
 
 jobs:
@@ -26,39 +26,31 @@ jobs:
       - name: Set up Git
         run: |
           git config --global user.name "${{ github.event.inputs.username }}"
-          git config --global user.email "${{ github.event.inputs.username }}@users.noreply.github.com"
+          git config --global user.email "${{ github.event.inputs.email }}"
           
-          # إعداد URL remote باستخدام كلمة المرور
-          git remote add origin "https://${{ github.event.inputs.username }}:${{ github.event.inputs.password }}@github.com/abodev144/$REPO_NAME.git"
+          # تحقق إذا كان المستودع موجودًا بالفعل
+          if [ -d ".git" ]; then
+            echo "مستودع Git موجود بالفعل."
+            git remote set-url origin "https://github.com/abodev144/${{ github.event.inputs.custom_name }}.git"
+          else
+            git init
+            git remote add origin "https://github.com/abodev144/${{ github.event.inputs.custom_name }}.git"
+          fi
 
       - name: Download large file
         run: |
           FILE_URL="${{ github.event.inputs.file_url }}"
           curl -L -o large_file "$FILE_URL"
-          echo "File downloaded from $FILE_URL."
+          echo "تم تحميل الملف من $FILE_URL."
 
       - name: Split file into parts
         run: |
           PART_SIZE=25M
           split -b $PART_SIZE "large_file" "${{ github.event.inputs.custom_name }}_part_"
-          echo "File split into parts."
-
-      - name: Create GitHub repository
-        run: |
-          # إنشاء اسم مستودع يعتمد على الاسم المخصص
-          FILE_NAME="${{ github.event.inputs.custom_name }}"
-          UUID=$(uuidgen)
-          REPO_NAME="${FILE_NAME}-${UUID}"  # مثال: myfile-123e4567-e89b-12d3-a456-426614174000
-          gh repo create "$REPO_NAME" --private
+          echo "تم تقسيم الملف إلى أجزاء."
 
       - name: Upload parts to GitHub
         run: |
-          if [ -d ".git" ]; then
-            echo "مستودع Git موجود بالفعل."
-          else
-            git init
-          fi
-
           git add "${{ github.event.inputs.custom_name }}_part_*"  # إضافة الأجزاء مع الاسم المخصص
           git commit -m "Upload split parts"
-          git push -u origin master
+          git push -u origin main  # دفع التغييرات إلى الفرع الرئيسي
