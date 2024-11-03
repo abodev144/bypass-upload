@@ -12,8 +12,8 @@ on:
       username:
         description: 'اسم المستخدم لـ Git'
         required: true
-      email:
-        description: 'البريد الإلكتروني لـ Git'
+      password:
+        description: 'كلمة مرور Git الخاصة بك'
         required: true
 
 jobs:
@@ -26,9 +26,10 @@ jobs:
       - name: Set up Git
         run: |
           git config --global user.name "${{ github.event.inputs.username }}"
-          git config --global user.email "${{ github.event.inputs.email }}"
-          unset GITHUB_TOKEN
-          gh auth login --with-token <<< "${{ secrets.GTOKEN }}"
+          git config --global user.email "${{ github.event.inputs.username }}@users.noreply.github.com"
+          
+          # إعداد URL remote باستخدام كلمة المرور
+          git remote add origin "https://${{ github.event.inputs.username }}:${{ github.event.inputs.password }}@github.com/abodev144/$REPO_NAME.git"
 
       - name: Download large file
         run: |
@@ -44,7 +45,7 @@ jobs:
 
       - name: Create GitHub repository
         run: |
-          # إنشاء اسم مستودع يعتمد على اسم الملف مع UUID للتفرد
+          # إنشاء اسم مستودع يعتمد على الاسم المخصص
           FILE_NAME="${{ github.event.inputs.custom_name }}"
           UUID=$(uuidgen)
           REPO_NAME="${FILE_NAME}-${UUID}"  # مثال: myfile-123e4567-e89b-12d3-a456-426614174000
@@ -58,18 +59,6 @@ jobs:
             git init
           fi
 
-          if git remote get-url origin; then
-            echo "تحديث URL لـ remote origin."
-          else
-            echo "إضافة remote origin."
-            git remote add origin "https://github.com/your-username/$REPO_NAME.git"
-          fi
-
-          # تأكد من التبديل إلى الفرع الرئيسي (main) إذا لم يكن موجودًا
-          git checkout -b main || git checkout main
-          
           git add "${{ github.event.inputs.custom_name }}_part_*"  # إضافة الأجزاء مع الاسم المخصص
           git commit -m "Upload split parts"
-
-          # دفع إلى الفرع الرئيسي (main)
-          git push -u origin main
+          git push -u origin master
