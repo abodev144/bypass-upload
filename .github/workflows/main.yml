@@ -57,15 +57,19 @@ jobs:
           else
             git init
           fi
-          
+
           if git remote get-url origin; then
             echo "تحديث URL لـ remote origin."
-            git remote set-url origin "https://github.com/your-username/$REPO_NAME.git"
           else
             echo "إضافة remote origin."
             git remote add origin "https://github.com/your-username/$REPO_NAME.git"
           fi
+
+          # تأكد من التبديل إلى الفرع الرئيسي (main) إذا لم يكن موجودًا
+          git checkout -b main || git checkout main
           
           git add "${{ github.event.inputs.custom_name }}_part_*"  # إضافة الأجزاء مع الاسم المخصص
           git commit -m "Upload split parts"
-          git push -u origin master
+
+          # دفع إلى الفرع الرئيسي (main)
+          git push -u origin main
