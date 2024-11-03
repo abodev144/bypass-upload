@@ -1,0 +1,48 @@
+name: Upload Large Files
+
+on:
+  workflow_dispatch:
+    inputs:
+      file_url:
+        description: 'رابط الملف الذي تريد رفعه'
+        required: true
+        default: ''  # يمكنك تعيين قيمة افتراضية هنا إذا رغبت
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "${{ env.UN }}"
+          git config --global user.email "${{ env.UEM }}"
+          unset GITHUB_TOKEN
+          gh auth login --with-token <<< "${{ secrets.GTOKEN }}"
+
+      - name: Download large file
+        run: |
+          FILE_URL="${{ github.event.inputs.file_url }}"  # استخدام رابط الملف المدخل
+          curl -L -o large_file "$FILE_URL"  # تنزيل الملف باستخدام curl
+          echo "File downloaded from $FILE_URL."
+
+      - name: Split file into parts
+        run: |
+          PART_SIZE=25M  # حجم الأجزاء
+          split -b $PART_SIZE "large_file" "large_file_part_"
+          echo "File split into parts."
+
+      - name: Create GitHub repository
+        run: |
+          REPO_NAME="your-repo-name"  # ضع اسم المستودع هنا
+          gh repo create $REPO_NAME --private --confirm
+
+      - name: Upload parts to GitHub
+        run: |
+          git init
+          git remote add origin "https://github.com/your-username/$REPO_NAME.git"  # ضع اسم المستخدم هنا
+          git add "large_file_part_*"
+          git commit -m "Upload split parts"
+          git push -u origin master
