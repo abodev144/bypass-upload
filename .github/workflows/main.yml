@@ -44,8 +44,11 @@ jobs:
 
       - name: Create GitHub repository
         run: |
-          REPO_NAME="your-repo-name"  # ضع اسم المستودع هنا
-          gh repo create $REPO_NAME --private --confirm
+          # إنشاء اسم مستودع يعتمد على اسم الملف مع UUID للتفرد
+          FILE_NAME="${{ github.event.inputs.custom_name }}"
+          UUID=$(uuidgen)
+          REPO_NAME="${FILE_NAME}-${UUID}"  # مثال: myfile-123e4567-e89b-12d3-a456-426614174000
+          gh repo create "$REPO_NAME" --private
 
       - name: Upload parts to GitHub
         run: |
